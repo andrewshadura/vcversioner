@@ -111,27 +111,27 @@ def test_dev_version_disabled(tmpdir):
     with tmpdir.join('version.txt').open() as infile:
         assert infile.read() == '1.0-2-gfeeb'
 
-def test_custom_git_args(tmpdir):
+def test_custom_vcs_args(tmpdir):
     "The command to execute to get the version can be customized."
     tmpdir.chdir()
     popen = RaisingFakePopen()
     with pytest.raises(SystemExit):
-        vcversioner.find_version(Popen=popen, git_args=('foo', 'bar'))
+        vcversioner.find_version(Popen=popen, vcs_args=('foo', 'bar'))
     assert popen.args[0] == ['foo', 'bar']
 
-def test_custom_git_args_substitutions(tmpdir):
+def test_custom_vcs_args_substitutions(tmpdir):
     "The command arguments have some substitutions performed."
     tmpdir.chdir()
     popen = RaisingFakePopen()
     with pytest.raises(SystemExit):
-        vcversioner.find_version(Popen=popen, git_args=('foo', 'bar', '%(pwd)s', '%(root)s'))
+        vcversioner.find_version(Popen=popen, vcs_args=('foo', 'bar', '%(pwd)s', '%(root)s'))
     assert popen.args[0] == ['foo', 'bar', tmpdir.strpath, tmpdir.strpath]
 
-def test_custom_git_args_substitutions_with_different_root(tmpdir):
+def test_custom_vcs_args_substitutions_with_different_root(tmpdir):
     "Specifying a different root will cause that root to be substituted."
     popen = RaisingFakePopen()
     with pytest.raises(SystemExit):
-        vcversioner.find_version(Popen=popen, root='/spam', git_args=('%(root)s',))
+        vcversioner.find_version(Popen=popen, root='/spam', vcs_args=('%(root)s',))
     assert popen.args[0] == ['/spam']
 
 def test_custom_version_file(tmpdir):

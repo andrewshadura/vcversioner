@@ -126,11 +126,11 @@ annotated tags, the git command could be amended like so::
       # [...]
       setup_requires=['vcversioner'],
       vcversioner={
-          'git_args': ['git', 'describe', '--long'],
+          'vcs_args': ['git', 'describe', '--long'],
       },
   )
 
-The ``git_args`` parameter must always be a list of strings, which will not be
+The ``vcs_args`` parameter must always be a list of strings, which will not be
 interpreted by the shell. This is the same as what ``subprocess.Popen``
 expects.
 
@@ -171,7 +171,7 @@ project root from ``__file__`` in setup.py::
       },
   )
 
-To get the same behavior in the 0.x version series, ``git_args`` can be set to
+To get the same behavior in the 0.x version series, ``vcs_args`` can be set to
 include the ``--git-dir`` flag::
 
   from setuptools import setup
@@ -180,7 +180,7 @@ include the ``--git-dir`` flag::
       # [...]
       setup_requires=['vcversioner'],
       vcversioner={
-          git_args=['git', '--git-dir', '%(root)s/.git', 'describe',
+          vcs_args=['git', '--git-dir', '%(root)s/.git', 'describe',
                     '--tags', '--long'],
       },
   )
