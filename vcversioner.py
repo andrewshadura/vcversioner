@@ -111,19 +111,22 @@ def find_version(include_dev_version=True, root='%(pwd)s',
 
     substitutions = {'pwd': os.getcwd()}
     substitutions['root'] = root % substitutions
-    vcs_args = [arg % substitutions for arg in vcs_args]
     if version_file is not None:
         version_file %= substitutions
 
+    raw_version = None
+
     # try to pull the version from git, or (perhaps) fall back on a
     # previously-saved version.
-    try:
-        proc = Popen(vcs_args, stdout=subprocess.PIPE)
-    except OSError:
-        raw_version = None
-    else:
-        raw_version = proc.communicate()[0].strip().decode()
-        version_source = vcs_args[0]
+    if vcs_args is not None:
+        vcs_args = [arg % substitutions for arg in vcs_args]
+        try:
+            proc = Popen(vcs_args, stdout=subprocess.PIPE)
+        except OSError:
+            pass
+        else:
+            raw_version = proc.communicate()[0].strip().decode()
+            version_source = vcs_args[0]
 
     # git failed if the string is empty
     if not raw_version:
@@ -131,10 +134,13 @@ def find_version(include_dev_version=True, root='%(pwd)s',
             print('%r failed' % (vcs_args,))
             raise SystemExit(2)
         elif not os.path.exists(version_file):
-            print("%r failed and %r isn't present." % (vcs_args, version_file))
-            print("are you installing from a github tarball?")
+            if vcs_args is None:
+                print("no VCS detected and %r isn't present." % version_file)
+            else:
+                print("%r failed and %r isn't present." % (vcs_args, version_file))
+                print("are you installing from a github tarball?")
             raise SystemExit(2)
-        print("couldn't determine version from %r; using %r" % (vcs_args[0], version_file))
+        print("couldn't determine version from %r; using %r" % (vcs_args[0] if vcs_args is not None else "VCS", version_file))
         with open(version_file, 'r') as infile:
             raw_version = infile.read()
         version_source = repr(version_file)
