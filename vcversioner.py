@@ -36,8 +36,7 @@ def print(*a, **kw):
 
 def find_version(include_dev_version=True, root='%(pwd)s',
                  version_file='%(root)s/version.txt', version_module_paths=(),
-                 git_args=('git', '--git-dir', '%(root)s/.git', 'describe',
-                           '--tags', '--long'),
+                 vcs_args=None,
                  Popen=subprocess.Popen):
     """Find an appropriate version number from version control.
 
@@ -78,8 +77,8 @@ def find_version(include_dev_version=True, root='%(pwd)s',
                                  could do ``from package._version import
                                  __version__, __sha__``.
 
-    :param git_args: The git command to run to get a version. By default, this
-                     is ``git --git-dir %(root)s/.git describe --tags --long``.
+    :param vcs_args: The VCS command to run to get a version. By default, for git
+                     this is ``git --git-dir %(root)s/.git describe --tags --long``.
                      ``--git-dir`` is used to prevent contamination from git
                      repositories which aren't the git repository of your
                      project. Specify this as a list of string arguments
@@ -89,7 +88,7 @@ def find_version(include_dev_version=True, root='%(pwd)s',
 
     :param Popen: Defaults to ``subprocess.Popen``. This is for testing.
 
-    *root*, *version_file*, and *git_args* each support some substitutions:
+    *root*, *version_file*, and *vcs_args* each support some substitutions:
 
     ``%(root)s``
       The value provided for *root*. This is not available for the *root*
@@ -99,33 +98,43 @@ def find_version(include_dev_version=True, root='%(pwd)s',
       The current working directory.
 
     """
+    args = {
+        ".git": ('git', '--git-dir', '%(root)s/.git', 'describe',
+                           '--tags', '--long'),
+        ".hg":  ('hg', 'log', '--template', '{latesttag}-{latesttagdistance}-hg{node|short}',
+                           '-r', '.')
+    }
+    if vcs_args is None:
+        for k, v in args.iteritems():
+            if (os.path.exists(k)):
+                vcs_args = v
 
     substitutions = {'pwd': os.getcwd()}
     substitutions['root'] = root % substitutions
-    git_args = [arg % substitutions for arg in git_args]
+    vcs_args = [arg % substitutions for arg in vcs_args]
     if version_file is not None:
         version_file %= substitutions
 
     # try to pull the version from git, or (perhaps) fall back on a
     # previously-saved version.
     try:
-        proc = Popen(git_args, stdout=subprocess.PIPE)
+        proc = Popen(vcs_args, stdout=subprocess.PIPE)
     except OSError:
         raw_version = None
     else:
         raw_version = proc.communicate()[0].strip().decode()
-        version_source = 'git'
+        version_source = vcs_args[0]
 
     # git failed if the string is empty
     if not raw_version:
         if version_file is None:
-            print('%r failed' % (git_args,))
+            print('%r failed' % (vcs_args,))
             raise SystemExit(2)
         elif not os.path.exists(version_file):
-            print("%r failed and %r isn't present." % (git_args, version_file))
+            print("%r failed and %r isn't present." % (vcs_args, version_file))
             print("are you installing from a github tarball?")
             raise SystemExit(2)
-        print("couldn't determine version from git; using %r" % version_file)
+        print("couldn't determine version from %r; using %r" % (vcs_args[0], version_file))
         with open(version_file, 'r') as infile:
             raw_version = infile.read()
         version_source = repr(version_file)
