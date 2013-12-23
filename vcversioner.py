@@ -131,16 +131,19 @@ def find_version(include_dev_version=True, root='%(pwd)s',
     # git failed if the string is empty
     if not raw_version:
         if version_file is None:
-            print('%r failed' % (vcs_args,))
+            if vcs_args is None:
+                print("no VCS detected.")
+            else:
+                print("'%s' failed" % (" ".join(vcs_args),))
             raise SystemExit(2)
         elif not os.path.exists(version_file):
             if vcs_args is None:
-                print("no VCS detected and %r isn't present." % version_file)
+                print("no VCS detected and '%s' isn't present." % version_file)
             else:
-                print("%r failed and %r isn't present." % (vcs_args, version_file))
+                print("'%s' failed and '%s' isn't present." % (" ".join(vcs_args), version_file))
                 print("are you installing from a github tarball?")
             raise SystemExit(2)
-        print("couldn't determine version from %r; using %r" % (vcs_args[0] if vcs_args is not None else "VCS", version_file))
+        print("couldn't determine version from %s; using '%s'" % (vcs_args[0] if vcs_args is not None else "VCS", version_file))
         with open(version_file, 'r') as infile:
             raw_version = infile.read()
         version_source = repr(version_file)
