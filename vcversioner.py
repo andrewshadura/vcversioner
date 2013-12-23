@@ -101,8 +101,8 @@ def find_version(include_dev_version=True, root='%(pwd)s',
     args = {
         ".git": ('git', '--git-dir', '%(root)s/.git', 'describe',
                            '--tags', '--long'),
-        ".hg":  ('hg', 'log', '--template', '{latesttag}-{latesttagdistance}-hg{node|short}',
-                           '-r', '.')
+        ".hg":  ('hg', 'log', '-R', '%(root)s', '-r', '.', '--template',
+                           '{latesttag}-{latesttagdistance}-hg{node|short}')
     }
     if vcs_args is None:
         for k, v in args.iteritems():
