@@ -28,12 +28,13 @@ empty = FakePopen(b'')
 invalid = FakePopen(b'foob')
 basic_version = FakePopen(b'1.0-0-gbeef')
 dev_version = FakePopen(b'1.0-2-gfeeb')
-
+git_args = ('git', '--git-dir', '%(root)s/.git', 'describe',
+            '--tags', '--long')
 
 def test_astounding_success(tmpdir):
     "Successful output from git is cached and returned."
     tmpdir.chdir()
-    version = vcversioner.find_version(Popen=basic_version)
+    version = vcversioner.find_version(Popen=basic_version, vcs_args=git_args)
     assert version == ('1.0', '0', 'gbeef')
     with tmpdir.join('version.txt').open() as infile:
         assert infile.read() == '1.0-0-gbeef'
@@ -42,7 +43,7 @@ def test_no_git(tmpdir):
     "If git fails and there's no version.txt, abort."
     tmpdir.chdir()
     with pytest.raises(SystemExit) as excinfo:
-        vcversioner.find_version(Popen=empty)
+        vcversioner.find_version(Popen=empty, vcs_args=git_args)
     assert excinfo.value.args[0] == 2
     assert not tmpdir.join('version.txt').check()
 
@@ -98,7 +99,7 @@ def test_invalid_version_file(tmpdir):
 def test_dev_version(tmpdir):
     ".dev version numbers are automatically created."
     tmpdir.chdir()
-    version = vcversioner.find_version(Popen=dev_version)
+    version = vcversioner.find_version(Popen=dev_version, vcs_args=git_args)
     assert version == ('1.0.dev2', '2', 'gfeeb')
     with tmpdir.join('version.txt').open() as infile:
         assert infile.read() == '1.0-2-gfeeb'
@@ -106,7 +107,7 @@ def test_dev_version(tmpdir):
 def test_dev_version_disabled(tmpdir):
     ".dev version numbers can also be disabled."
     tmpdir.chdir()
-    version = vcversioner.find_version(Popen=dev_version, include_dev_version=False)
+    version = vcversioner.find_version(Popen=dev_version, vcs_args=git_args, include_dev_version=False)
     assert version == ('1.0', '2', 'gfeeb')
     with tmpdir.join('version.txt').open() as infile:
         assert infile.read() == '1.0-2-gfeeb'
@@ -137,7 +138,7 @@ def test_custom_vcs_args_substitutions_with_different_root(tmpdir):
 def test_custom_version_file(tmpdir):
     "The version.txt file can have a unique name."
     tmpdir.chdir()
-    version = vcversioner.find_version(Popen=basic_version, version_file='custom.txt')
+    version = vcversioner.find_version(Popen=basic_version, vcs_args=git_args, version_file='custom.txt')
     assert version == ('1.0', '0', 'gbeef')
     with tmpdir.join('custom.txt').open() as infile:
         assert infile.read() == '1.0-0-gbeef'
@@ -153,7 +154,7 @@ def test_custom_version_file_reading(tmpdir):
 def test_version_file_disabled(tmpdir):
     "The version.txt file can be disabled too."
     tmpdir.chdir()
-    version = vcversioner.find_version(Popen=basic_version, version_file=None)
+    version = vcversioner.find_version(Popen=basic_version, vcs_args=git_args, version_file=None)
     assert version == ('1.0', '0', 'gbeef')
     assert not tmpdir.join('version.txt').check()
 
@@ -176,12 +177,12 @@ def test_version_file_disabled_Popen_raises(tmpdir):
 def test_namedtuple():
     "The output namedtuple has attribute names too."
 
-    version = vcversioner.find_version(Popen=basic_version, version_file=None)
+    version = vcversioner.find_version(Popen=basic_version, vcs_args=git_args, version_file=None)
     assert version.version == '1.0'
     assert version.commits == '0'
     assert version.sha == 'gbeef'
 
-    version = vcversioner.find_version(Popen=dev_version, version_file=None)
+    version = vcversioner.find_version(Popen=dev_version, vcs_args=git_args, version_file=None)
     assert version.version == '1.0.dev2'
     assert version.commits == '2'
     assert version.sha == 'gfeeb'
@@ -191,7 +192,7 @@ def test_version_module_paths(tmpdir):
     tmpdir.chdir()
     paths = ['foo.py', 'bar.py']
     vcversioner.find_version(
-        Popen=basic_version, version_module_paths=paths)
+        Popen=basic_version, vcs_args=git_args, version_module_paths=paths)
     for path in paths:
         with open(path) as infile:
             assert infile.read() == """
@@ -209,6 +210,7 @@ def test_setup_astounding_success():
     dist.metadata = Struct()
     vcversioner.setup(
         dist, 'vcversioner',
-        {str('Popen'): basic_version, str('version_file'): None})
+        {str('Popen'): basic_version, str('version_file'): None,
+         str('vcs_args'): git_args})
     assert dist.version == '1.0'
     assert dist.metadata.version == '1.0'
