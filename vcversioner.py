@@ -37,6 +37,7 @@ def print(*a, **kw):
 def find_version(include_dev_version=True, root='%(pwd)s',
                  version_file='%(root)s/version.txt', version_module_paths=(),
                  vcs_args=None,
+                 git_args=None,
                  Popen=subprocess.Popen):
     """Find an appropriate version number from version control.
 
@@ -104,6 +105,10 @@ def find_version(include_dev_version=True, root='%(pwd)s',
         ".hg":  ('hg', 'log', '-R', '%(root)s', '-r', '.', '--template',
                            '{latesttag}-{latesttagdistance}-hg{node|short}')
     }
+
+    if git_args is not None:
+        vcs_args = git_args
+
     if vcs_args is None:
         for k, v in args.iteritems():
             if (os.path.exists(k)):
