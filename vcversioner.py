@@ -105,9 +105,9 @@ def find_version(include_dev_version=True, root='%(pwd)s',
                            '{latesttag}-{latesttagdistance}-hg{node|short}')
     }
     if vcs_args is None:
-        for k, v in args.iteritems():
+        for k in args:
             if (os.path.exists(k)):
-                vcs_args = v
+                vcs_args = args[k]
 
     substitutions = {'pwd': os.getcwd()}
     substitutions['root'] = root % substitutions
